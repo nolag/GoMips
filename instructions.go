@@ -14,8 +14,13 @@ type RsRtInstruction struct {
 	Instruction
 }
 
-// RInstruction represents an RS instruction
+// RInstruction represents an R instruction
 type RInstruction struct {
+	RsRtInstruction
+}
+
+// IInstruction represents an I instruction
+type IInstruction struct {
 	RsRtInstruction
 }
 
@@ -49,8 +54,17 @@ func (instruction RInstruction) Samt() Uint5 {
 	return Uint5(instruction.Instruction >> 6 & 0x1F)
 }
 
-// Function reads the function from the instruction
+// Function returns the function from the instruction
 func (instruction RInstruction) Function() Uint6 {
-	// TODO
 	return Uint6(instruction.Instruction & 0x3F)
+}
+
+// NewIInstruction is a shortcut to IInstruction{RsRtInstruction{instruction}}
+func NewIInstruction(instruction Instruction) IInstruction {
+	return IInstruction{RsRtInstruction{instruction}}
+}
+
+// Address returns the address from the instruction
+func (instruction IInstruction) Address() uint16 {
+	return uint16(instruction.Instruction)
 }
