@@ -10,15 +10,6 @@ type Processor interface {
 	Step() error
 }
 
-// MemoryAction simulates a special memory location when written to or read from
-type MemoryAction interface {
-	// Writes 32 bits to the special memory location, returning an error if on a failure
-	Wrtie32(value uint32) error
-
-	// Reads 32 bits from the special memory location, returning an error on a failure
-	Read32() (uint32, error)
-}
-
 // InstructionAction takes action based on an Instruction
 // Note that InstructionActions are expected to ignore the OpCode and assume the processor called the correct function.
 type InstructionAction func(*Mips32Processor, Instruction) error
