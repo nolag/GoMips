@@ -34,9 +34,11 @@ type Mips32Processor struct {
 func (processor *Mips32Processor) Step() error {
 	instruction := Instruction(processor.ByteOrder.Uint32(processor.Memory[processor.ProgramCounter:]))
 	processor.ProgramCounter += 4
+	priorDelay := processor.DelayAction
+	processor.DelayAction = nil
 	result := processor.InstructionActions[instruction.OpCode()](processor, instruction)
-	if processor.DelayAction != nil {
-		processor.DelayAction(processor)
+	if priorDelay != nil {
+		priorDelay(processor)
 	}
 
 	return result

@@ -120,31 +120,58 @@ func TestStepExecutesDelayActionAfterStepIfItIsSet(t *testing.T) {
 	processor := Mips32Processor{}
 	processor.ByteOrder = binary.LittleEndian
 	wasInstructionRun := false
-	wasDelayedActionRun := false
+	delayActionCallCount := 0
 
-	verifiedCall := func(*Mips32Processor, Instruction) error {
+	thirdCall := func(*Mips32Processor, Instruction) error {
+		if delayActionCallCount != 1 {
+			t.Fatalf("Delayed action must be called after the proceeded instruciton")
+		}
+
+		return nil
+	}
+
+	secondCall := func(*Mips32Processor, Instruction) error {
 		wasInstructionRun = true
-		if wasDelayedActionRun {
-			t.Fatalf("Delayed action must be run after instruction is run")
+		for i := 0; i < 64; i++ {
+			processor.InstructionActions[i] = thirdCall
+		}
+
+		if processor.DelayAction != nil {
+			t.Fatalf("Delay action must be cleared to allow this instruction to set one")
+		}
+
+		return nil
+	}
+
+	firstCall := func(*Mips32Processor, Instruction) error {
+		for i := 0; i < 64; i++ {
+			processor.InstructionActions[i] = secondCall
+		}
+
+		processor.DelayAction = func(actual *Mips32Processor) {
+			if &processor != actual {
+				t.Fatalf("Processor sent to run delayed instruction must be the same processor running it")
+			}
+
+			if !wasInstructionRun {
+				t.Fatalf("Next instruction must be run before the delayed action")
+			}
+
+			delayActionCallCount++
 		}
 
 		return nil
 	}
 
 	for i := 0; i < 64; i++ {
-		processor.InstructionActions[i] = verifiedCall
+		processor.InstructionActions[i] = firstCall
 	}
 
 	processor.Memory = make([]byte, 800)
-	processor.DelayAction = func(actual *Mips32Processor) {
-		if &processor != actual {
-			t.Fatalf("Processor sent to run delayed instruction must be the same processor running it")
-		}
-
-		wasDelayedActionRun = true
-	}
 
 	// When
+	processor.Step()
+	processor.Step()
 	processor.Step()
 
 	// Then
@@ -152,7 +179,7 @@ func TestStepExecutesDelayActionAfterStepIfItIsSet(t *testing.T) {
 		t.Fatalf("Instruction must still be run when there is a delayed action")
 	}
 
-	if !wasDelayedActionRun {
-		t.Fatalf("If set, delayed action must be taken after instruction in run")
+	if delayActionCallCount != 1 {
+		t.Fatalf("Delayed call must be called exactly once was called %v", delayActionCallCount)
 	}
 }
