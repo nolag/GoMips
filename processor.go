@@ -1,3 +1,5 @@
+// Package gomips provides a MIPS simulators and the barebones to create your own MIPs like processor
+// NOTE: This package is not yet officially released and may change at any time.
 package gomips
 
 import (
