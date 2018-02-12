@@ -183,3 +183,116 @@ func TestStepExecutesDelayActionAfterStepIfItIsSet(t *testing.T) {
 		t.Fatalf("Delayed call must be called exactly once was called %v", delayActionCallCount)
 	}
 }
+
+func TestUnknownInstructionExecutionCallbackWhenNoActionFound(t *testing.T) {
+	// Given
+	processor := Mips32Processor{}
+	UnknownInstructionCallbackTest(t, &processor, false, true)
+}
+
+func TestUnknownInstructionExecutionCallbackWhenRuturnsUnknownInstruction(t *testing.T) {
+	// Given
+	processor := Mips32Processor{}
+	for i := 0; i < 64; i++ {
+		processor.InstructionActions[i] = func(actualProc *Mips32Processor, actualInst Instruction) error {
+			return UnknonIntruction32Error(actualInst)
+		}
+	}
+
+	UnknownInstructionCallbackTest(t, &processor, false, true)
+}
+
+func TestUnknownInstructionExecutionCallbackFailWhenNoActionFound(t *testing.T) {
+	// Given
+	processor := Mips32Processor{}
+	UnknownInstructionCallbackTest(t, &processor, true, true)
+}
+
+func TestUnknownInstructionExecutionCallbackFailWhenRuturnsUnknownInstruction(t *testing.T) {
+	// Given
+	processor := Mips32Processor{}
+	for i := 0; i < 64; i++ {
+		processor.InstructionActions[i] = func(actualProc *Mips32Processor, actualInst Instruction) error {
+			return UnknonIntruction32Error(actualInst)
+		}
+	}
+
+	anyCallbackSetup := true
+
+	UnknownInstructionCallbackTest(t, &processor, true, anyCallbackSetup)
+}
+
+func TestUnknownInstructionWhenCallbackNotSetUpRuturnsUnknownInstruction(t *testing.T) {
+	// Given
+	processor := Mips32Processor{}
+	UnknownInstructionCallbackTest(t, &processor, false, false)
+}
+
+func TestUnknownInstructionWhenCallbackNotSetUpWhenRuturnsUnknownInstruction(t *testing.T) {
+	// Given
+	processor := Mips32Processor{}
+	for i := 0; i < 64; i++ {
+		processor.InstructionActions[i] = func(actualProc *Mips32Processor, actualInst Instruction) error {
+			return UnknonIntruction32Error(actualInst)
+		}
+	}
+
+	UnknownInstructionCallbackTest(t, &processor, false, false)
+}
+
+func UnknownInstructionCallbackTest(t *testing.T, processor *Mips32Processor, retErr bool, callbackSetup bool) {
+	processor.Memory = make([]byte, 800)
+	processor.ByteOrder = binary.LittleEndian
+	instruction := uint32(123415)
+	callbackMade := false
+	expectedPc := uint32(100)
+	processor.ProgramCounter = expectedPc - 4
+	anyError := errors.New("Something")
+
+	if callbackSetup {
+		processor.UnknownInstruction = func(actualProc *Mips32Processor, actualInst Instruction) error {
+			callbackMade = true
+			if actualProc != processor {
+				t.Fatalf("Wrong processor used in unknown op callback")
+			}
+
+			if instruction != uint32(actualInst) {
+				t.Fatalf("Wrong instruction used in unknown op callback")
+			}
+
+			if processor.ProgramCounter != expectedPc {
+				t.Fatalf("Pc must be just after the read")
+			}
+
+			if retErr {
+				return anyError
+			}
+
+			return nil
+		}
+	}
+
+	processor.ByteOrder.PutUint32(processor.Memory[processor.ProgramCounter:], instruction)
+
+	// When
+	err := processor.Step()
+
+	// Then
+	if !callbackMade && callbackSetup {
+		t.Fatalf("Callback to unknown instruction must be made")
+	}
+
+	errAsUkInstErr, ok := err.(UnknonIntruction32Error)
+
+	if callbackSetup {
+		if retErr && err != anyError {
+			t.Fatalf("Error from callback must be handed down")
+		} else if !retErr && err != nil {
+			t.Fatalf("Error was handeled and must not have occured but got %v", err)
+		}
+	} else {
+		if !ok || uint32(errAsUkInstErr) != instruction {
+			t.Fatalf("Unknown instruction must be handed down if no callback is set up")
+		}
+	}
+}
