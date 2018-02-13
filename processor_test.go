@@ -240,6 +240,47 @@ func TestUnknownInstructionWhenCallbackNotSetUpWhenRuturnsUnknownInstruction(t *
 	UnknownInstructionCallbackTest(t, &processor, false, false)
 }
 
+func TestDelayedActionsAreRunForUnknownInstructionErrors(t *testing.T) {
+	DelayedCallbackWithErrorTest(t, UnknonIntruction32Error(0), true)
+}
+
+func TestDelayedActionsAreNotRunForOtherErrors(t *testing.T) {
+	DelayedCallbackWithErrorTest(t, errors.New("Any unhandeled error"), true)
+}
+
+func DelayedCallbackWithErrorTest(t *testing.T, expectedErr error, expectedWasCallbackRun bool) {
+	// Given
+	processor := Mips32Processor{}
+	processor.Memory = make([]byte, 100)
+	processor.ByteOrder = binary.LittleEndian
+	callbackMade := false
+	for i := 0; i < 64; i++ {
+		processor.InstructionActions[i] = func(actualProc *Mips32Processor, actualInst Instruction) error {
+			return expectedErr
+		}
+	}
+
+	processor.DelayAction = func(proc *Mips32Processor) {
+		callbackMade = true
+	}
+
+	// When
+	actualErr := processor.Step()
+
+	// Then
+	if actualErr != expectedErr {
+		t.Fatalf("Expected %v got %v", expectedErr, actualErr)
+	}
+
+	if callbackMade != expectedWasCallbackRun {
+		callbackMsg := ""
+		if expectedWasCallbackRun {
+			callbackMsg = "not "
+		}
+		t.Fatalf("Expected callback %vto be run", callbackMsg)
+	}
+}
+
 func UnknownInstructionCallbackTest(t *testing.T, processor *Mips32Processor, retErr bool, callbackSetup bool) {
 	processor.Memory = make([]byte, 800)
 	processor.ByteOrder = binary.LittleEndian
