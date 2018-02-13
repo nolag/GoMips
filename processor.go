@@ -37,6 +37,8 @@ type Mips32Processor struct {
 	ByteOrder          binary.ByteOrder
 	DelayAction        ProcessorHook
 	UnknownInstruction InstructionAction
+	Hi                 uint32
+	Low                uint32
 }
 
 // Step runs the next instruction, returns if there are more instructions to run.
