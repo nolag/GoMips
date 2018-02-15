@@ -45,7 +45,7 @@ func TestRt(t *testing.T) {
 
 func TestNewRInstruction(t *testing.T) {
 	// Given
-	anyInstruction := Instruction(0x821EF021)
+	anyInstruction := Instruction32(0x821EF021)
 	expected := RInstruction{RsRtInstruction{anyInstruction}}
 
 	// When
@@ -53,7 +53,7 @@ func TestNewRInstruction(t *testing.T) {
 
 	// Then
 	if expected != actual {
-		t.Fatalf("Expected: 0x%x, Got: 0x%x", expected.Instruction, actual.Instruction)
+		t.Fatalf("Expected: 0x%x, Got: 0x%x", expected.Instruction32, actual.Instruction32)
 	}
 }
 
@@ -97,7 +97,7 @@ func TestFunction(t *testing.T) {
 
 func TestNewIInstruction(t *testing.T) {
 	// Given
-	anyInstruction := Instruction(0x821EF021)
+	anyInstruction := Instruction32(0x821EF021)
 	expected := IInstruction{RsRtInstruction{anyInstruction}}
 
 	// When
@@ -105,7 +105,7 @@ func TestNewIInstruction(t *testing.T) {
 
 	// Then
 	if expected != actual {
-		t.Fatalf("Expected: 0x%x, Got: 0x%x", expected.Instruction, actual.Instruction)
+		t.Fatalf("Expected: 0x%x, Got: 0x%x", expected.Instruction32, actual.Instruction32)
 	}
 }
 
@@ -122,7 +122,7 @@ func TestAddress(t *testing.T) {
 	assertValue(t, uint(function2), anyAddress)
 }
 
-func createInstructions(valuePart uint, shift uint, size uint) (Instruction, Instruction) {
+func createInstructions(valuePart uint, shift uint, size uint) (Instruction32, Instruction32) {
 	mask := uint32(0)
 
 	// Make sure that the implmentation is different than the test
@@ -132,7 +132,7 @@ func createInstructions(valuePart uint, shift uint, size uint) (Instruction, Ins
 
 	valueAsInt := uint32(valuePart) << shift
 	negated := 0xFFFFFFFF ^ mask<<shift | valueAsInt
-	return Instruction(valueAsInt), Instruction(negated)
+	return Instruction32(valueAsInt), Instruction32(negated)
 }
 
 func assertValue(t *testing.T, actual uint, expected uint) {

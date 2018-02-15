@@ -15,14 +15,14 @@ type Processor interface {
 
 // InstructionAction takes action based on an Instruction
 // Note that InstructionActions are expected to ignore the OpCode and assume the processor called the correct function.
-type InstructionAction func(*Mips32Processor, Instruction) error
+type InstructionAction func(*Mips32Processor, Instruction32) error
 
 // ProcessorHook is a hook to allow a callback for later.
 // This is used to allow delayed actions (like branch and load delays) to be simulated
 type ProcessorHook func(*Mips32Processor)
 
 // UnknonIntruction32Error represents an unknown instruction
-type UnknonIntruction32Error uint32
+type UnknonIntruction32Error Instruction32
 
 func (err UnknonIntruction32Error) Error() string {
 	return fmt.Sprintf("Unknown instruction %8x", uint32(err))
@@ -43,7 +43,7 @@ type Mips32Processor struct {
 
 // Step runs the next instruction, returns if there are more instructions to run.
 func (processor *Mips32Processor) Step() error {
-	instruction := Instruction(processor.ByteOrder.Uint32(processor.Memory[processor.ProgramCounter:]))
+	instruction := Instruction32(processor.ByteOrder.Uint32(processor.Memory[processor.ProgramCounter:]))
 	processor.ProgramCounter += 4
 	priorDelay := processor.DelayAction
 	processor.DelayAction = nil
@@ -71,9 +71,9 @@ func (processor *Mips32Processor) Step() error {
 	return result
 }
 
-func (processor *Mips32Processor) handelUnknownInstruction(instruction Instruction) error {
+func (processor *Mips32Processor) handelUnknownInstruction(instruction Instruction32) error {
 	if processor.UnknownInstruction == nil {
-		return UnknonIntruction32Error(uint32(instruction))
+		return UnknonIntruction32Error(instruction)
 	}
 
 	return processor.UnknownInstruction(processor, instruction)

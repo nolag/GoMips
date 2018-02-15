@@ -14,7 +14,7 @@ func TestStepIncrementsPc(t *testing.T) {
 	processor.ProgramCounter = anyPc
 	expectedPc := anyPc + 4
 
-	pcVerify := func(*Mips32Processor, Instruction) error {
+	pcVerify := func(*Mips32Processor, Instruction32) error {
 		if expectedPc != processor.ProgramCounter {
 			t.Fatalf("Program counter must be changed before the instruction runs")
 		}
@@ -50,14 +50,14 @@ func TestStepChoosesCorrectActionWithCorrectInstruction(t *testing.T) {
 
 	processor := Mips32Processor{}
 	processor.ByteOrder = binary.LittleEndian
-	failCall := func(*Mips32Processor, Instruction) error {
+	failCall := func(*Mips32Processor, Instruction32) error {
 		t.Fatalf("Unexpected call with op code %v, processor must only call the instruction in the op code", anyOpCode)
 		return nil
 	}
 
 	processor.ProgramCounter = 24
 
-	verifiedCall := func(actualProcessor *Mips32Processor, instruction Instruction) error {
+	verifiedCall := func(actualProcessor *Mips32Processor, instruction Instruction32) error {
 		numCalls++
 		actual := uint32(instruction)
 		if expectedValue != actual {
@@ -98,7 +98,7 @@ func TestStepReturnsErrorFromCall(t *testing.T) {
 	processor := Mips32Processor{}
 	processor.ByteOrder = binary.LittleEndian
 	anyError := errors.New("Anything")
-	errorFn := func(*Mips32Processor, Instruction) error { return anyError }
+	errorFn := func(*Mips32Processor, Instruction32) error { return anyError }
 
 	for i := 0; i < 64; i++ {
 		processor.InstructionActions[i] = errorFn
@@ -122,7 +122,7 @@ func TestStepExecutesDelayActionAfterStepIfItIsSet(t *testing.T) {
 	wasInstructionRun := false
 	delayActionCallCount := 0
 
-	thirdCall := func(*Mips32Processor, Instruction) error {
+	thirdCall := func(*Mips32Processor, Instruction32) error {
 		if delayActionCallCount != 1 {
 			t.Fatalf("Delayed action must be called after the proceeded instruciton")
 		}
@@ -130,7 +130,7 @@ func TestStepExecutesDelayActionAfterStepIfItIsSet(t *testing.T) {
 		return nil
 	}
 
-	secondCall := func(*Mips32Processor, Instruction) error {
+	secondCall := func(*Mips32Processor, Instruction32) error {
 		wasInstructionRun = true
 		for i := 0; i < 64; i++ {
 			processor.InstructionActions[i] = thirdCall
@@ -143,7 +143,7 @@ func TestStepExecutesDelayActionAfterStepIfItIsSet(t *testing.T) {
 		return nil
 	}
 
-	firstCall := func(*Mips32Processor, Instruction) error {
+	firstCall := func(*Mips32Processor, Instruction32) error {
 		for i := 0; i < 64; i++ {
 			processor.InstructionActions[i] = secondCall
 		}
@@ -194,7 +194,7 @@ func TestUnknownInstructionExecutionCallbackWhenRuturnsUnknownInstruction(t *tes
 	// Given
 	processor := Mips32Processor{}
 	for i := 0; i < 64; i++ {
-		processor.InstructionActions[i] = func(actualProc *Mips32Processor, actualInst Instruction) error {
+		processor.InstructionActions[i] = func(actualProc *Mips32Processor, actualInst Instruction32) error {
 			return UnknonIntruction32Error(actualInst)
 		}
 	}
@@ -212,7 +212,7 @@ func TestUnknownInstructionExecutionCallbackFailWhenRuturnsUnknownInstruction(t 
 	// Given
 	processor := Mips32Processor{}
 	for i := 0; i < 64; i++ {
-		processor.InstructionActions[i] = func(actualProc *Mips32Processor, actualInst Instruction) error {
+		processor.InstructionActions[i] = func(actualProc *Mips32Processor, actualInst Instruction32) error {
 			return UnknonIntruction32Error(actualInst)
 		}
 	}
@@ -232,7 +232,7 @@ func TestUnknownInstructionWhenCallbackNotSetUpWhenRuturnsUnknownInstruction(t *
 	// Given
 	processor := Mips32Processor{}
 	for i := 0; i < 64; i++ {
-		processor.InstructionActions[i] = func(actualProc *Mips32Processor, actualInst Instruction) error {
+		processor.InstructionActions[i] = func(actualProc *Mips32Processor, actualInst Instruction32) error {
 			return UnknonIntruction32Error(actualInst)
 		}
 	}
@@ -255,7 +255,7 @@ func DelayedCallbackWithErrorTest(t *testing.T, expectedErr error, expectedWasCa
 	processor.ByteOrder = binary.LittleEndian
 	callbackMade := false
 	for i := 0; i < 64; i++ {
-		processor.InstructionActions[i] = func(actualProc *Mips32Processor, actualInst Instruction) error {
+		processor.InstructionActions[i] = func(actualProc *Mips32Processor, actualInst Instruction32) error {
 			return expectedErr
 		}
 	}
@@ -291,7 +291,7 @@ func UnknownInstructionCallbackTest(t *testing.T, processor *Mips32Processor, re
 	anyError := errors.New("Something")
 
 	if callbackSetup {
-		processor.UnknownInstruction = func(actualProc *Mips32Processor, actualInst Instruction) error {
+		processor.UnknownInstruction = func(actualProc *Mips32Processor, actualInst Instruction32) error {
 			callbackMade = true
 			if actualProc != processor {
 				t.Fatalf("Wrong processor used in unknown op callback")
