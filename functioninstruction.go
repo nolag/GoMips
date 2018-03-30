@@ -1,16 +1,16 @@
 package gomips
 
-// RInstructionAction takes action based on an RInstructionAction
-// Note that InstructionActions are expected to ignore the OpCode, and function and assume the processor called the correct function.
-type RInstructionAction func(*Mips32Processor, RInstruction) error
+// RInstructionAction takes action based on an RInstruction
+// Note that RInstructionAction are expected to ignore the OpCode, and function and assume the processor called the correct function.
+type RInstructionAction func(*Processor, RInstruction) error
 
-// RunFromRInstruction creates a InstructionAction using the map functions.  If a function is not found, UnknonIntruction32Error is returned
+// RunFromRInstruction creates a InstructionAct using the map functions.  If a function is not found, UnknonInstructionError is returned
 func RunFromRInstruction(functions *[64]RInstructionAction) InstructionAction {
-	return func(processor *Mips32Processor, instruction Instruction32) error {
+	return func(processor *Processor, instruction Instruction) error {
 		rinstruction := NewRInstruction(instruction)
 		callback := functions[rinstruction.Function()]
 		if callback == nil {
-			return UnknonIntruction32Error(instruction)
+			return UnknonInstructionError(instruction)
 		}
 
 		return callback(processor, rinstruction)

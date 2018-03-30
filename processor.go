@@ -1,80 +1,59 @@
-// Package gomips provides a MIPS simulators and the barebones to create your own MIPs like processor
-// NOTE: This package is not yet officially released and may change at any time.
 package gomips
 
 import (
 	"encoding/binary"
 	"fmt"
+
+	"github.com/nolag/gocpu/memory"
+	"github.com/nolag/gocpu/registers"
 )
 
-// Processor is an interface for a simulated processor
-type Processor interface {
-	// Step runs the next instruction, returns error to indicate a trap or unhandeled exception
-	Step() error
-}
-
 // InstructionAction takes action based on an Instruction
-// Note that InstructionActions are expected to ignore the OpCode and assume the processor called the correct function.
-type InstructionAction func(*Mips32Processor, Instruction32) error
+// Note that InstructionAction are expected to ignore the OpCode and assume the processor called the correct function.
+type InstructionAction func(*Processor, Instruction) error
 
-// ProcessorHook is a hook to allow a callback for later.
-// This is used to allow delayed actions (like branch and load delays) to be simulated
-type ProcessorHook func(*Mips32Processor)
+// UnknonInstructionError represents an unknown instruction
+type UnknonInstructionError Instruction
 
-// UnknonIntruction32Error represents an unknown instruction
-type UnknonIntruction32Error Instruction32
-
-func (err UnknonIntruction32Error) Error() string {
-	return fmt.Sprintf("Unknown instruction %8x", uint32(err))
+func (err UnknonInstructionError) Error() string {
+	return fmt.Sprintf("Unknown instruction 0x%08X", uint32(err))
 }
 
-// Mips32Processor is a simulated MIPs processor.
-type Mips32Processor struct {
-	Registers          [32]Register32
-	Memory             []byte
-	InstructionActions [64]InstructionAction
-	ProgramCounter     uint32
-	ByteOrder          binary.ByteOrder
-	DelayAction        ProcessorHook
-	UnknownInstruction InstructionAction
-	Hi                 uint32
-	Low                uint32
+// Processor represents a MIPS processor, it is meant to be used with a FixedInstructionLenRunnerUint32
+// Use one of the New... functions to assure you set all needed fields
+type Processor struct {
+	ByteOrder                binary.ByteOrder
+	Hi                       uint32
+	InstructionActions       [64]InstructionAction
+	Low                      uint32
+	Memory                   memory.Memory
+	Pc                       registers.IRegister32
+	Registers                [32]registers.IIntRegister32
+	FloatRegisters           [32]registers.IFloatRegister32
+	UnknownInstructionAction InstructionAction
 }
 
-// Step runs the next instruction, returns if there are more instructions to run.
-func (processor *Mips32Processor) Step() error {
-	instruction := Instruction32(processor.ByteOrder.Uint32(processor.Memory[processor.ProgramCounter:]))
-	processor.ProgramCounter += 4
-	priorDelay := processor.DelayAction
-	processor.DelayAction = nil
-	decodedInstruction := processor.InstructionActions[instruction.OpCode()]
-	ran := false
-	var result error
-	if decodedInstruction != nil {
-		result = decodedInstruction(processor, instruction)
-		if result != nil {
-			_, ok := result.(UnknonIntruction32Error)
-			ran = !ok
-		} else {
-			ran = true
+// RunUint32 runs a single instrution (without incrementing the PC for its own read)
+func (processor *Processor) RunUint32(instruction uint32) error {
+	mipsInstruciton := Instruction(instruction)
+	action := processor.InstructionActions[mipsInstruciton.OpCode()]
+	if action != nil {
+		err := action(processor, mipsInstruciton)
+		_, ok := err.(UnknonInstructionError)
+		if ok {
+			return processor.runUnknownInstructionAction(mipsInstruciton)
 		}
+
+		return err
 	}
 
-	if !ran {
-		result = processor.handelUnknownInstruction(instruction)
-	}
-
-	if priorDelay != nil {
-		priorDelay(processor)
-	}
-
-	return result
+	return processor.runUnknownInstructionAction(mipsInstruciton)
 }
 
-func (processor *Mips32Processor) handelUnknownInstruction(instruction Instruction32) error {
-	if processor.UnknownInstruction == nil {
-		return UnknonIntruction32Error(instruction)
+func (processor *Processor) runUnknownInstructionAction(instruction Instruction) error {
+	if processor.UnknownInstructionAction == nil {
+		return UnknonInstructionError(instruction)
 	}
 
-	return processor.UnknownInstruction(processor, instruction)
+	return processor.UnknownInstructionAction(processor, instruction)
 }
