@@ -6,6 +6,9 @@ type Uint6 uint8
 // Uint5 represents an unsigned 5 bit integer.
 type Uint5 uint8
 
+// Uint3 represents an unsigned 3 bit integer.
+type Uint3 uint8
+
 // Instruction represents a 32 bit MIPs instruction
 type Instruction uint32
 

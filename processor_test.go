@@ -63,8 +63,8 @@ func TestRunUint32UnknownInstructionCallbackFailWhenNoActionFound(t *testing.T) 
 	processor := Processor{}
 	errExpected := errors.New("Simething cool")
 	value := uint32(214)
-	processor.UnknownInstructionAction = CreateVerifiedInstructionActionCall(
-		t, errExpected, value, &processor)
+	processor.ErrorHandler = CreateVerifiedUnknownInstructionCallback(
+		t, errExpected, &processor)
 
 	// When - Then
 	RunProcessor(t, &processor, errExpected, value)
@@ -75,8 +75,9 @@ func TestRunUint32UnknownInstructionCallbackFailWhenActionReturnsUnknownInstruct
 	value := uint32(325)
 	processor := Processor{}
 	errExpected := errors.New("Some error that should be returned")
-	processor.UnknownInstructionAction = CreateVerifiedInstructionActionCall(
-		t, errExpected, value, &processor)
+
+	processor.ErrorHandler = CreateVerifiedUnknownInstructionCallback(
+		t, errExpected, &processor)
 
 	for i := 0; i < 64; i++ {
 		processor.InstructionActions[i] =
@@ -121,4 +122,16 @@ func CreateVerifiedInstructionActionCall(
 		assert.Equal(t, expectedProcessor, processor, "Callback made for wrong processor")
 		return errExpected
 	}
+}
+
+func CreateVerifiedUnknownInstructionCallback(
+	t *testing.T,
+	errExpected error,
+	expectedProcessor *Processor) ErrorHandler {
+	handler := func(processor *Processor, cause ExceptionCause) error {
+		assert.Equal(t, RI, cause, "Wrong cause of exception")
+		return errExpected
+	}
+
+	return handler
 }

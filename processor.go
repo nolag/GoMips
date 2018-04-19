@@ -19,18 +19,24 @@ func (err UnknonInstructionError) Error() string {
 	return fmt.Sprintf("Unknown instruction 0x%08X", uint32(err))
 }
 
+// ErrorHandler is used to handel errors from Processor
+// Note that the coprocessor 0 will be set up correctly before the call
+type ErrorHandler func(*Processor, ExceptionCause) error
+
 // Processor represents a MIPS processor, it is meant to be used with a FixedInstructionLenRunnerUint32
 // Use one of the New... functions to assure you set all needed fields
 type Processor struct {
-	ByteOrder                binary.ByteOrder
-	Hi                       uint32
-	InstructionActions       [64]InstructionAction
-	Low                      uint32
-	Memory                   memory.Memory
-	Pc                       registers.IRegister32
-	Registers                [32]registers.IIntRegister32
-	FloatRegisters           [32]registers.IFloatRegister32
-	UnknownInstructionAction InstructionAction
+	ByteOrder          binary.ByteOrder
+	Coprocessors       [4]Coprocessor
+	ErrorHandler       ErrorHandler
+	FloatRegisters     [32]registers.IFloatRegister32
+	Hi                 uint32
+	InBranchDelay      bool
+	InstructionActions [64]InstructionAction
+	Low                uint32
+	Memory             memory.Memory
+	Pc                 registers.IRegister32
+	Registers          [32]registers.IIntRegister32
 }
 
 // RunUint32 runs a single instrution (without incrementing the PC for its own read)
@@ -51,9 +57,9 @@ func (processor *Processor) RunUint32(instruction uint32) error {
 }
 
 func (processor *Processor) runUnknownInstructionAction(instruction Instruction) error {
-	if processor.UnknownInstructionAction == nil {
+	if processor.ErrorHandler == nil {
 		return UnknonInstructionError(instruction)
 	}
 
-	return processor.UnknownInstructionAction(processor, instruction)
+	return processor.ErrorHandler(processor, RI)
 }
