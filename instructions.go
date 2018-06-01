@@ -9,6 +9,9 @@ type Uint5 uint8
 // Uint3 represents an unsigned 3 bit integer.
 type Uint3 uint8
 
+// Uint26 represents a 26 bit integer.
+type Uint26 uint32
+
 // Instruction represents a 32 bit MIPs instruction
 type Instruction uint32
 
@@ -25,6 +28,16 @@ type RInstruction struct {
 // IInstruction represents an I instruction
 type IInstruction struct {
 	RsRtInstruction
+}
+
+// JInstruction represents a J instruction
+type JInstruction struct {
+	Instruction
+}
+
+// RInstructionBuilder provides methods to build a RInstruction
+type RInstructionBuilder struct {
+	RInstruction
 }
 
 // OpCode reads the op code from the instruction
@@ -67,7 +80,12 @@ func NewIInstruction(instruction Instruction) IInstruction {
 	return IInstruction{RsRtInstruction{instruction}}
 }
 
-// Address returns the address from the instruction
-func (instruction IInstruction) Address() uint16 {
+// Immediate returns the immediate value from the instruction
+func (instruction IInstruction) Immediate() uint16 {
 	return uint16(instruction.Instruction)
+}
+
+// Address returns the address part of the instruction
+func (instruction JInstruction) Address() Uint26 {
+	return Uint26(instruction.Instruction & 0x3FFFFFF)
 }

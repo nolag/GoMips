@@ -109,17 +109,31 @@ func TestNewIInstruction(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestAddress(t *testing.T) {
-	anyAddress := uint(0xFEED)
-	instruction1, instruction2 := createInstructions(anyAddress, 0, 16)
+func TestImmediate(t *testing.T) {
+	anyImmediate := uint(0xFEED)
+	instruction1, instruction2 := createInstructions(anyImmediate, 0, 16)
 
 	// When
-	function1 := IInstruction{RsRtInstruction{instruction1}}.Address()
-	function2 := IInstruction{RsRtInstruction{instruction2}}.Address()
+	immediate1 := IInstruction{RsRtInstruction{instruction1}}.Immediate()
+	immediate2 := IInstruction{RsRtInstruction{instruction2}}.Immediate()
 
 	// Then
-	assert.Equal(t, anyAddress, uint(function1))
-	assert.Equal(t, anyAddress, uint(function2))
+	assert.Equal(t, anyImmediate, uint(immediate1))
+	assert.Equal(t, anyImmediate, uint(immediate2))
+}
+
+func TestAddress(t *testing.T) {
+	anyAddress := uint(0x2EF3291)
+	instruction1, instruction2 := createInstructions(anyAddress, 0, 26)
+
+	// When
+	address1 := JInstruction{instruction1}.Address()
+	address2 := JInstruction{instruction2}.Address()
+
+	// Then
+	assert.Equal(t, anyAddress, uint(address1))
+	assert.Equal(t, anyAddress, uint(address2))
+
 }
 
 func createInstructions(valuePart uint, shift uint, size uint) (Instruction, Instruction) {
