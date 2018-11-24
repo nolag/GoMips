@@ -71,26 +71,26 @@ func TestRd(t *testing.T) {
 	assert.Equal(t, anyValue, uint(rd1))
 	assert.Equal(t, anyValue, uint(rd2))
 }
-func TestSamt(t *testing.T) {
+func TestShamt(t *testing.T) {
 	anyValue := uint(0x1D)
 	instruction1, instruction2 := createInstructions(anyValue, 6, 5)
 
 	// When
-	samt1 := RInstruction{RsRtInstruction{instruction1}}.Samt()
-	samt2 := RInstruction{RsRtInstruction{instruction2}}.Samt()
+	shamt1 := RInstruction{RsRtInstruction{instruction1}}.Shamt()
+	shamt2 := RInstruction{RsRtInstruction{instruction2}}.Shamt()
 
 	// Then
-	assert.Equal(t, anyValue, uint(samt1))
-	assert.Equal(t, anyValue, uint(samt2))
+	assert.Equal(t, anyValue, uint(shamt1))
+	assert.Equal(t, anyValue, uint(shamt2))
 }
 
-func TestFunction(t *testing.T) {
+func TestFunct(t *testing.T) {
 	anyFunction := uint(0x1D)
 	instruction1, instruction2 := createInstructions(anyFunction, 0, 6)
 
 	// When
-	function1 := RInstruction{RsRtInstruction{instruction1}}.Function()
-	function2 := RInstruction{RsRtInstruction{instruction2}}.Function()
+	function1 := RInstruction{RsRtInstruction{instruction1}}.Funct()
+	function2 := RInstruction{RsRtInstruction{instruction2}}.Funct()
 
 	// Then
 	assert.Equal(t, anyFunction, uint(function1))
@@ -122,18 +122,31 @@ func TestImmediate(t *testing.T) {
 	assert.Equal(t, anyImmediate, uint(immediate2))
 }
 
-func TestAddress(t *testing.T) {
-	anyAddress := uint(0x2EF3291)
-	instruction1, instruction2 := createInstructions(anyAddress, 0, 26)
+func TestPositiveAddress(t *testing.T) {
+	anyPositiveAddress := int32(0x1EF3291)
+	instruction1, instruction2 := createInstructions(uint(anyPositiveAddress), 0, 26)
 
 	// When
 	address1 := JInstruction{instruction1}.Address()
 	address2 := JInstruction{instruction2}.Address()
 
 	// Then
-	assert.Equal(t, anyAddress, uint(address1))
-	assert.Equal(t, anyAddress, uint(address2))
+	assert.Equal(t, anyPositiveAddress, int32(address1))
+	assert.Equal(t, anyPositiveAddress, int32(address2))
+}
 
+func TestNegativeAddress(t *testing.T) {
+	asUint := uint32(0xFEEF3291)
+	anyNegativeAddress := int32(asUint)
+	instruction1, instruction2 := createInstructions(uint(0x2EF3291), 0, 26)
+
+	// When
+	address1 := JInstruction{instruction1}.Address()
+	address2 := JInstruction{instruction2}.Address()
+
+	// Then
+	assert.Equal(t, anyNegativeAddress, int32(address1))
+	assert.Equal(t, anyNegativeAddress, int32(address2))
 }
 
 func createInstructions(valuePart uint, shift uint, size uint) (Instruction, Instruction) {

@@ -25,11 +25,6 @@ type JInstruction struct {
 	Instruction
 }
 
-// RInstructionBuilder provides methods to build a RInstruction
-type RInstructionBuilder struct {
-	RInstruction
-}
-
 // OpCode reads the op code from the instruction
 func (instruction Instruction) OpCode() instructions.Uint6 {
 	return instructions.Uint6(instruction >> 26)
@@ -55,13 +50,13 @@ func (instruction RInstruction) Rd() instructions.Uint5 {
 	return instructions.Uint5(instruction.Instruction >> 11 & 0x1F)
 }
 
-// Samt returns the shift amount bits of an instruction
-func (instruction RInstruction) Samt() instructions.Uint5 {
+// Shamt returns the shift amount bits of an instruction
+func (instruction RInstruction) Shamt() instructions.Uint5 {
 	return instructions.Uint5(instruction.Instruction >> 6 & 0x1F)
 }
 
-// Function returns the function from the instruction
-func (instruction RInstruction) Function() instructions.Uint6 {
+// Funct returns the function from the instruction
+func (instruction RInstruction) Funct() instructions.Uint6 {
 	return instructions.Uint6(instruction.Instruction & 0x3F)
 }
 
@@ -76,6 +71,6 @@ func (instruction IInstruction) Immediate() uint16 {
 }
 
 // Address returns the address part of the instruction
-func (instruction JInstruction) Address() instructions.Uint26 {
-	return instructions.Uint26(instruction.Instruction & 0x3FFFFFF)
+func (instruction JInstruction) Address() instructions.Int26 {
+	return instructions.Uint26(instruction.Instruction & 0x3FFFFFF).ToInt26()
 }
